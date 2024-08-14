@@ -22,14 +22,15 @@ if window = 0 then do
     exit 1
 end
 
-call printw "Window id is %s", window
+call mvprintw 5,10,"Window id is %s", window
 
 /* Refresh the Screen */
 call refresh
 
 /* Set up the window mode */
-call keypad window, 1
 call noecho
+call curs_set 0
+call keypad window, 1
 call scrollok window, 1
 
 /* Loop */
@@ -45,7 +46,7 @@ do forever
     /* Wait for a key press */
     key = wgetch(window)
 
-    if key = "KEY_F3" then leave
+    if key = "KEY_F(3)" then leave
     if key = "x" then leave
 end
 

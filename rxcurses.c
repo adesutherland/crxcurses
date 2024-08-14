@@ -48,29 +48,29 @@ static int getch_utf8(WINDOW* window, char* buffer) {
         case '\b':
             strcpy(buffer, "KEY_BACKSPACE"); return 1;
         case KEY_F(1):
-            strcpy(buffer, "KEY_F1"); return 1;
+            strcpy(buffer, "KEY_F(1)"); return 1;
         case KEY_F(2):
-            strcpy(buffer, "KEY_F2"); return 1;
+            strcpy(buffer, "KEY_F(2)"); return 1;
         case KEY_F(3):
-            strcpy(buffer, "KEY_F3"); return 1;
+            strcpy(buffer, "KEY_F(3)"); return 1;
         case KEY_F(4):
-            strcpy(buffer, "KEY_F4"); return 1;
+            strcpy(buffer, "KEY_F(4)"); return 1;
         case KEY_F(5):
-            strcpy(buffer, "KEY_F5"); return 1;
+            strcpy(buffer, "KEY_F(5)"); return 1;
         case KEY_F(6):
-            strcpy(buffer, "KEY_F6"); return 1;
+            strcpy(buffer, "KEY_F(6)"); return 1;
         case KEY_F(7):
-            strcpy(buffer, "KEY_F7"); return 1;
+            strcpy(buffer, "KEY_F(7)"); return 1;
         case KEY_F(8):
-            strcpy(buffer, "KEY_F8"); return 1;
+            strcpy(buffer, "KEY_F(8)"); return 1;
         case KEY_F(9):
-            strcpy(buffer, "KEY_F9"); return 1;
+            strcpy(buffer, "KEY_F(9)"); return 1;
         case KEY_F(10):
-            strcpy(buffer, "KEY_F10"); return 1;
+            strcpy(buffer, "KEY_F(10)"); return 1;
         case KEY_F(11):
-            strcpy(buffer, "KEY_F11"); return 1;
+            strcpy(buffer, "KEY_F(11)"); return 1;
         case KEY_F(12):
-            strcpy(buffer, "KEY_F12"); return 1;
+            strcpy(buffer, "KEY_F(12)"); return 1;
         case KEY_DL:
             strcpy(buffer, "KEY_DL"); return 1;
         case KEY_IL:
@@ -416,7 +416,46 @@ common_printw(WINDOW* window, rxinteger _numargs, rxpa_attribute_value *_arg, rx
     }
 }
 
+/**
+ * @brief Adds a string to the screen
+ *
+ * Prints a string to the screen at the current cursor position.
+ *
+ * This function is a wrapper for curses `addstr()`.
+ *
+ * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
+ * @signal FAILURE if an error occurs during the execution of `addstr()`.
+ */
+PROCEDURE(rx_addstr)
+{
+    // Check for the correct number of arguments
+    if( NUM_ARGS != 1) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected string")
 
+    // Call addstr() and check for errors
+    if (addstr(GETSTRING(ARG(0))) == ERR) {
+        RETURNSIGNAL(SIGNAL_FAILURE, "ncurses addstr() failure")
+    }
+}
+
+/**
+ * @brief Sets the visibility of the cursor
+ *
+ * This function is a wrapper for curses `curs_set()`.
+ *
+ * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
+ * @signal FAILURE if an error occurs during the execution of `curs_set()`.
+ */
+PROCEDURE(rx_curs_set)
+{
+    // Check for the correct number of arguments
+    if( NUM_ARGS != 1) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected visibility")
+
+    // Call curs_set() and check for errors
+    int result = curs_set(GETINT(ARG(0)));
+    if (result == ERR) {
+        RETURNSIGNAL(SIGNAL_FAILURE, "ncurses curs_set() failure")
+    }
+}
 
 /**
  * @brief Deletes a window
@@ -608,6 +647,120 @@ PROCEDURE(rx_keypad)
 }
 
 /**
+ * @brief Adds a string to the screen at a position
+ *
+ * Prints a string to the screen at the specified position.
+ *
+ * This function is a wrapper for curses `mvaddstr()`.
+ *
+ * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
+ * @signal FAILURE if an error occurs during the execution of `mvaddstr()`.
+ */
+PROCEDURE(rx_mvaddstr)
+{
+    // Check for the correct number of arguments
+    if( NUM_ARGS != 3) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "y, x, string")
+
+    // Get the window pointer
+    int y = GETINT(ARG(0));
+    int x = GETINT(ARG(1));
+    char *string = GETSTRING(ARG(2));
+
+    // Call mvaddstr() and check for errors
+    if (mvaddstr(y, x, string) == ERR) {
+        RETURNSIGNAL(SIGNAL_FAILURE, "ncurses mvaddstr() failure")
+    }
+}
+
+/**
+ * @brief Moves the cursor and prints formatted output
+ *
+ * Moves the cursor to the specified location and prints formatted output.
+ * The function uses printf() style format strings and arguments to print
+ * except it only supports string specifiers.
+ *
+ * This function is a wrapper for `mvprintw()`
+ *
+ * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
+ * @signal INVALID_ARGUMENTS if the format string is invalid.
+ * @signal FAILURE if an error occurs during the execution of `mvprintw()`.
+ */
+PROCEDURE(rx_mvprintw)
+{
+    /* Check for the correct number of arguments (at least 3) */
+    if( NUM_ARGS < 3) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected y, x, format, ...")
+    int y = GETINT(ARG(0));
+    int x = GETINT(ARG(1));
+
+    /* Move the cursor */
+    if (move(y, x) == ERR) {
+        RETURNSIGNAL(SIGNAL_FAILURE, "ncurses move() failure")
+    }
+
+    /* Call common wrapper */
+    common_printw(stdscr, _numargs - 2, &(_arg[2]), _return, _signal);
+}
+
+/**
+ * @brief Moves the cursor and adds a string to a window
+ *
+ * Moves the cursor to the specified location and prints a string to the window.
+ *
+ * This function is a wrapper for curses `mvwaddstr()`.
+ *
+ * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
+ * @signal FAILURE if an error occurs during the execution of `mvwaddstr()`.
+ */
+PROCEDURE(rx_mvwaddstr)
+{
+    // Check for the correct number of arguments
+    if( NUM_ARGS != 4) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected window, y, x, string")
+
+    // Get the window pointer
+    WINDOW* win = (WINDOW*)GETINT(ARG(0));
+    int y = GETINT(ARG(1));
+    int x = GETINT(ARG(2));
+    char *string = GETSTRING(ARG(3));
+
+    // Call mvwaddstr() and check for errors
+    if (mvwaddstr(win, y, x, string) == ERR) {
+        RETURNSIGNAL(SIGNAL_FAILURE, "ncurses mvwaddstr() failure")
+    }
+}
+
+/**
+ * @brief Moves the cursor and prints formatted output to a window
+ *
+ * Moves the cursor to the specified location and prints formatted output.
+ *
+ * The function uses printf() style format strings and arguments to print
+ * except it only supports string specifiers.
+ *
+ * This function is a wrapper for `mvwprintw()`
+ *
+ * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
+ * @signal INVALID_ARGUMENTS if the format string is invalid.
+ * @signal FAILURE if an error occurs during the execution of `mvwprintw()`.
+ */
+PROCEDURE(rx_mvwprintw)
+{
+    /* Check for the correct number of arguments (at least 4) */
+    if( NUM_ARGS < 4) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected window, y, x, format, ...")
+    WINDOW* window = (WINDOW*)GETINT(ARG(0));
+    int y = GETINT(ARG(1));
+    int x = GETINT(ARG(2));
+
+    /* Move the cursor */
+    if (wmove(window, y, x) == ERR) {
+        RETURNSIGNAL(SIGNAL_FAILURE, "ncurses wmove() failure")
+    }
+
+    /* Call common wrapper */
+    common_printw(window, _numargs - 3, &(_arg[3]), _return, _signal);
+}
+
+
+/**
  * @brief Creates a new window
  *
  * Creates a new window with the given number of lines and columns.
@@ -732,6 +885,31 @@ PROCEDURE(rx_wgetch)
 }
 
 /**
+ * @brief Adds a string to a window
+ *
+ * Prints a string to the window at the current cursor position.
+ *
+ * This function is a wrapper for curses `waddstr()`.
+ *
+ * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
+ * @signal FAILURE if an error occurs during the execution of `waddstr()`.
+ */
+PROCEDURE(rx_waddstr)
+{
+    // Check for the correct number of arguments
+    if( NUM_ARGS != 2) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected window, string")
+
+    // Get the window pointer
+    WINDOW* win = (WINDOW*)GETINT(ARG(0));
+    char *string = GETSTRING(ARG(1));
+
+    // Call waddstr() and check for errors
+    if (waddstr(win, string) == ERR) {
+        RETURNSIGNAL(SIGNAL_FAILURE, "ncurses waddstr() failure")
+    }
+}
+
+/**
  * @brief Prints formatted output to the window
  *
  * The function uses printf() style format strings and arguments to print
@@ -831,6 +1009,8 @@ PROCEDURE(rx_unescape)
 // before main() is called (static)
 LOADFUNCS
 //      C Function__, REXX namespace & name, Option_, Return Type_, Arguments
+ADDPROC(rx_addstr,    "rxcurses.addstr",    "b",      ".void",    "string=.string");
+ADDPROC(rx_curs_set,  "rxcurses.curs_set",  "b",      ".void",    "visibility=.int");
 ADDPROC(rx_delwin,    "rxcurses.delwin",    "b",      ".void",    "window=.int");
 ADDPROC(rx_endwin,    "rxcurses.endwin",    "b",      ".void",    "");
 ADDPROC(rx_getch,     "rxcurses.getch",     "b",      ".string",  "");
@@ -839,14 +1019,17 @@ ADDPROC(rx_echo,      "rxcurses.echo",      "b",      ".void",    "");
 ADDPROC(rx_noecho,    "rxcurses.noecho",    "b",      ".void",    "");
 ADDPROC(rx_initscr,   "rxcurses.initscr",   "b",      ".int",     "");
 ADDPROC(rx_keypad,    "rxcurses.keypad",    "b",      ".void",    "window=.int,enable=.int");
+ADDPROC(rx_mvaddstr,  "rxcurses.mvaddstr",  "b",      ".void",    "y=.int,x=.int,string=.string");
+ADDPROC(rx_mvprintw,  "rxcurses.mvprintw",  "b",      ".void",    "y=.int,x=.int,format=.string,...=.string");
+ADDPROC(rx_mvwprintw, "rxcurses.mvwprintw", "b",      ".void",    "window=.int,y=.int,x=.int,format=.string,...=.string");
+ADDPROC(rx_mvwaddstr, "rxcurses.mvwaddstr", "b",      ".void",    "window=.int,y=.int,x=.int,string=.string");
 ADDPROC(rx_newwin,    "rxcurses.newwin",    "b",      ".int",     "nlines=.int,ncols=.int,begin_y=.int,begin_x=.int");
 ADDPROC(rx_printw,    "rxcurses.printw",    "b",      ".void",    "format=.string,...=.string");
 ADDPROC(rx_refresh,   "rxcurses.refresh",   "b",      ".void",    "");
 ADDPROC(rx_scrollok,  "rxcurses.scrollok",  "b",      ".void",    "window=.int,enable=.int");
+ADDPROC(rx_waddstr,   "rxcurses.waddstr",   "b",      ".void",    "window=.int,string=.string");
 ADDPROC(rx_wgetch,    "rxcurses.wgetch",    "b",      ".string",  "window=.int");
 ADDPROC(rx_wprintw,   "rxcurses.wprintw",   "b",      ".void",    "window=.int,format=.string,...=.string");
 ADDPROC(rx_wrefresh,  "rxcurses.wrefresh",  "b",      ".void",    "window=.int");
 ADDPROC(rx_unescape,  "rxcurses.unescape",  "b",      ".string",  "string=.string");
-
 ENDLOADFUNCS
-
