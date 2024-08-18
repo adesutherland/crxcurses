@@ -60,6 +60,11 @@ typedef rxinteger (*rxpa_func_getint)(rxpa_attribute_value attributeValue); /* G
 typedef void (*rxpa_func_setfloat)(rxpa_attribute_value attributeValue, double value); /* Set a float in an attribute value */
 typedef double (*rxpa_func_getfloat)(rxpa_attribute_value attributeValue); /* Get a float from an attribute value */
 
+// Exit Functions
+typedef void (*say_exit_func)(char* message);
+typedef void (*rxpa_set_say_exit)(say_exit_func sayExitFunc); /* Set Say exit function */
+typedef void (*rxpa_reset_say_exit)(); /* Set Say exit function */
+
 // The initialization context struct
 typedef struct rxpa_initctxptr* rxpa_initctxptr;
 struct rxpa_initctxptr {
@@ -70,6 +75,9 @@ struct rxpa_initctxptr {
     rxpa_func_getint getint;
     rxpa_func_setfloat setfloat;
     rxpa_func_getfloat getfloat;
+    // Exit Function Management
+    rxpa_set_say_exit setsayexit;
+    rxpa_reset_say_exit resetsayexit;
 };
 
 // Are we building a statically linked library?
@@ -90,6 +98,8 @@ static rxpa_initctxptr _rxpa_context = &_rxpa_initctx;
 #define GETINT(attr) _rxpa_context->getint((attr))
 #define SETFLOAT(attr, value) _rxpa_context->setfloat((attr),(value))
 #define GETFLOAT(attr) _rxpa_context->getfloat((attr))
+#define SET_SAY_EXIT(func) _rxpa_context->setsayexit((func))
+#define RESET_SAY_EXIT() _rxpa_context->resetsayexit()
 
 // The plugin is being built as a DLL
 // INITIALIZER is redefined to be a simple function
@@ -160,6 +170,8 @@ void rxpa_setint(rxpa_attribute_value attributeValue, rxinteger value); /* Set a
 rxinteger rxpa_getint(rxpa_attribute_value attributeValue); /* Get an integer from an attribute value */
 void rxpa_setfloat(rxpa_attribute_value attributeValue, double value); /* Set a float in an attribute value */
 double rxpa_getfloat(rxpa_attribute_value attributeValue); /* Get a float from an attribute value */
+void rxpa_setsayexit(say_exit_func sayExitFunc); /* Set Say exit function */
+void rxpa_resetsayexit(); /* Set Say exit function */
 
 // Macro is used to register a procedure - static linkage
 #ifndef DECL_ONLY
@@ -173,6 +185,8 @@ double rxpa_getfloat(rxpa_attribute_value attributeValue); /* Get a float from a
 #define GETINT(attr) rxpa_getint((attr))
 #define SETFLOAT(attr, value) rxpa_setfloat((attr),(value))
 #define GETFLOAT(attr) rxpa_getfloat((attr))
+#define SET_SAY_EXIT(func) rxpa_setsayexit((func))
+#define RESET_SAY_EXIT() rxpa_resetsayexit()
 
 #endif
 

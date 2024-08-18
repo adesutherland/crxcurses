@@ -56,6 +56,15 @@ add_custom_target(rxcurses_demo ALL
         DEPENDS rxcurses_demo.rxbin
 )
 
+add_custom_command(
+        COMMAND rxc -i \"${CMAKE_CURRENT_BINARY_DIR}\" -o rxcurses_demo2 \"${CMAKE_CURRENT_SOURCE_DIR}/rxcurses_demo2\"  && rxas rxcurses_demo2
+        DEPENDS curses ${CMAKE_CURRENT_SOURCE_DIR}/rxcurses_demo2.rexx
+        OUTPUT rxcurses_demo2.rxbin
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+add_custom_target(rxcurses_demo2 ALL
+        DEPENDS rxcurses_demo2.rxbin
+)
 
 # Enable testing functionality
 enable_testing()
