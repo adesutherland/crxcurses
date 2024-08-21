@@ -45,25 +45,15 @@ add_custom_target(rxcurses_integration_test ALL
         DEPENDS rxcurses_integration_test.rxbin
 )
 
-# Build Demonstrator - Rexx
+# Build Demonstrator
 add_custom_command(
-        COMMAND rxc -i \"${CMAKE_CURRENT_BINARY_DIR}\" -o rxcurses_demo \"${CMAKE_CURRENT_SOURCE_DIR}/rxcurses_demo\"  && rxas rxcurses_demo
-        DEPENDS curses ${CMAKE_CURRENT_SOURCE_DIR}/rxcurses_demo.rexx
-        OUTPUT rxcurses_demo.rxbin
+        COMMAND rxc -i \"${CMAKE_CURRENT_BINARY_DIR}\" -o demo \"${CMAKE_CURRENT_SOURCE_DIR}/demo\"  && rxas demo
+        DEPENDS curses ${CMAKE_CURRENT_SOURCE_DIR}/demo.rexx
+        OUTPUT demo.rxbin
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
-add_custom_target(rxcurses_demo ALL
-        DEPENDS rxcurses_demo.rxbin
-)
-
-add_custom_command(
-        COMMAND rxc -i \"${CMAKE_CURRENT_BINARY_DIR}\" -o rxcurses_demo2 \"${CMAKE_CURRENT_SOURCE_DIR}/rxcurses_demo2\"  && rxas rxcurses_demo2
-        DEPENDS curses ${CMAKE_CURRENT_SOURCE_DIR}/rxcurses_demo2.rexx
-        OUTPUT rxcurses_demo2.rxbin
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-add_custom_target(rxcurses_demo2 ALL
-        DEPENDS rxcurses_demo2.rxbin
+add_custom_target(demo ALL
+        DEPENDS demo.rxbin
 )
 
 # Enable testing functionality
@@ -75,9 +65,4 @@ add_test(NAME rxcurses_integration_test
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 set_tests_properties(rxcurses_integration_test PROPERTIES ENVIRONMENT "TERM=xterm-256color")
-
-# C Demo
-add_executable(c_demo c_demo.c)
-target_link_libraries(c_demo ${CURSES_LIBRARIES})
-
 

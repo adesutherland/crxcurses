@@ -15,7 +15,7 @@
  * If there is no input (timeout), the buffer is set to an empty string.
  *
  * It has special functionality to handle the BACKSPACE key; additionally 127
- * and '\b' are mapped to KEY_BACKSPACE
+ * and '\b' are mapped to BACKSPACE. Also the \n a d \r are mapped to ENTER.
  *
  * The buffer must be at least 15 characters long to store the key name.
  *
@@ -29,6 +29,9 @@ static int getch_utf8(WINDOW* window, char* buffer) {
     switch (ch = wgetch(window)) {
         case ERR: // No input / Timeout
             strcpy(buffer, ""); return 0;
+        case '\n':
+        case '\r':
+            strcpy(buffer, "[ENTER]"); return 0;
         case KEY_CODE_YES:
             strcpy(buffer, "[CODE_YES]"); return 1;
         case KEY_BREAK:

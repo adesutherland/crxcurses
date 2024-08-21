@@ -1,8 +1,27 @@
 # Essential Curses APIs for CREXX (MVP)
 
+This is a MVP version of ncurses for crexx. 
+
+This project is looking for a maintainer. If you are interested in maintaining this project, please contact me.
+
 ## Plugin
 File name: `rxcurses.rxplugin`
 Namespace: `rxcurses`
+
+## Demo
+To run the demo, make sure you have the plugin loaded in your project directory or where you have the crexx binaries.
+
+Build with the usual:
+```
+rxc demo
+rxas demo
+```
+
+Run with:
+```
+rxvme demo rxcurses
+```
+Note the use of rxvme which includes the crexx standard library.
 
 ## Screen and Window Management
 - initscr(): Initialises the library and sets up the screen.
