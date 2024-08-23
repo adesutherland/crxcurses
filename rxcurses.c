@@ -240,8 +240,6 @@ static int getch_utf8(WINDOW* window, char* buffer) {
             strcpy(buffer, "[MOUSE]"); return 1;
         case KEY_RESIZE:
             strcpy(buffer, "[RESIZE]"); return 1;
-        case KEY_EVENT:
-            strcpy(buffer, "[EVENT]"); return 1;
         default:
             if (ch > 0xFF) {
                 // Handle unknown special keys
@@ -291,6 +289,7 @@ static int get_attributes(char* attribute_list)
     int colour_pair = 0;
     char* p;
     char* q;
+    char* end;
 
     // Copy the attribute string to a buffer and convert it to uppercase
     // to make the comparison case-insensitive, and we can write to the buffer
@@ -301,19 +300,28 @@ static int get_attributes(char* attribute_list)
     for (p = attribute_uppercase; *p; p++) {
         *p = (char)toupper(*p);
     }
+    end = p;
 
     // Process the string character by character skipping spaces,
     // finding the start of the next attribute or color pair and zero terminating it,
     // then checking if it is a known attribute or a color pair
-    for (p = attribute_uppercase; *p; p++) {
-        if (*p == ' ') {
-            continue;
+    for (p = attribute_uppercase; p < end; p++) {
+        // Skip leading spaces
+        while (*p == ' ') {
+            p++;
         }
+        if (p >= end) {
+            break;
+        }
+
+        // Null terminate the attribute or color pair
         char* start = p;
-        while (*p && *p != ' ') {
+        while (p < end && *p != ' ') {
             p++;
         }
         *p = 0;
+
+        // Check if it is a known attribute or a color pair
         if (strcmp(start, "NORMAL") == 0) {
             attributes |= A_NORMAL;
         } else if (strcmp(start, "STANDOUT") == 0) {
@@ -346,7 +354,7 @@ static int get_attributes(char* attribute_list)
             start += 11;
             // Find the ) and null terminate the string
             q = strchr(start, ')');
-            if (q == NULL) {
+            if (q == NULL || q >= end) {
                 free(attribute_uppercase);
                 return -1;
             }
@@ -369,6 +377,9 @@ static int get_attributes(char* attribute_list)
 static short get_color(char* color)
 {
     char* p;
+    char* start;
+    short color_number = 0;
+
     /* Copy and uppercase the color string */
     char* color_uppercase = strdup(color);
     if (color_uppercase == NULL) {
@@ -378,25 +389,44 @@ static short get_color(char* color)
         *p = (char)toupper(*p);
     }
 
-    if (strcmp(color_uppercase, "BLACK") == 0) {
-        return COLOR_BLACK;
-    } else if (strcmp(color_uppercase, "RED") == 0) {
-        return COLOR_RED;
-    } else if (strcmp(color_uppercase, "GREEN") == 0) {
-        return COLOR_GREEN;
-    } else if (strcmp(color_uppercase, "YELLOW") == 0) {
-        return COLOR_YELLOW;
-    } else if (strcmp(color_uppercase, "BLUE") == 0) {
-        return COLOR_BLUE;
-    } else if (strcmp(color_uppercase, "MAGENTA") == 0) {
-        return COLOR_MAGENTA;
-    } else if (strcmp(color_uppercase, "CYAN") == 0) {
-        return COLOR_CYAN;
-    } else if (strcmp(color_uppercase, "WHITE") == 0) {
-        return COLOR_WHITE;
-    } else {
-        return -1;
+    // Skip any leading spaces
+    start = color_uppercase;
+    while (*start == ' ') {
+        start++;
     }
+
+    // Remove any trailing spaces
+    p = start + strlen(start) - 1;
+    while (p >= start && *p == ' ') {
+        *p = 0;
+        p--;
+    }
+
+    // Check the color
+    if (strcmp(start, "BLACK") == 0) {
+        color_number = COLOR_BLACK;
+    } else if (strcmp(start, "RED") == 0) {
+        color_number = COLOR_RED;
+    } else if (strcmp(start, "GREEN") == 0) {
+        color_number = COLOR_GREEN;
+    } else if (strcmp(start, "YELLOW") == 0) {
+        color_number = COLOR_YELLOW;
+    } else if (strcmp(start, "BLUE") == 0) {
+        color_number = COLOR_BLUE;
+    } else if (strcmp(start, "MAGENTA") == 0) {
+        color_number = COLOR_MAGENTA;
+    } else if (strcmp(start, "CYAN") == 0) {
+        color_number = COLOR_CYAN;
+    } else if (strcmp(start, "WHITE") == 0) {
+        color_number = COLOR_WHITE;
+    } else {
+        color_number = -1;
+    }
+
+    // Free the color string
+    free(color_uppercase);
+
+    return color_number;
 }
 
 /*
