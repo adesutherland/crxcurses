@@ -36,10 +36,19 @@ main: procedure = .int expose screen header footer log filelist contents files f
     call refresh
 
     files = .string[]
-    address cmd "ls" output files
+    os = upper(word(version(), 1))
+    if os = "WINDOWS" then do
+        /* Windows */
+        address cmd "cmd.exe /C dir /b /a-d" output files
+    end
+    else do
+        /* Linux */
+        address cmd "ls" output files
+    end
+
     if rc <> 0 then do
-        say "List Files Error - RC = "rc "when doing : ls"
         call endwin
+        say "List Files Error - RC = "rc "when doing : ls"
         exit 1
     end
     fileline = 1
@@ -95,6 +104,7 @@ setup_screen: procedure expose header footer log filelist contents screen date_c
 
     content_width = .int
     content_length = .int
+    log_lines = 10
 
     /* Clean up - in case of screen resize */
     if header <> 0 then call delwin header
@@ -140,7 +150,7 @@ setup_screen: procedure expose header footer log filelist contents screen date_c
     call wrefresh footer
 
     /* Create a log window - bottom 5 lines (or don't bother creating it) */
-    log = newwin(5, cols, rows - 6, 0)
+    log = newwin(log_lines, cols, rows - log_lines - 1, 0)
     if log = 0 then do
         call endwin
         say "Error creating log window"
@@ -156,7 +166,7 @@ setup_screen: procedure expose header footer log filelist contents screen date_c
     call wrefresh log
 
     /* Create a file list window - left 20 columns */
-    filelist = newwin(rows - 7, 35, 1, 0)
+    filelist = newwin(rows - log_lines - 2, 35, 1, 0)
     if filelist = 0 then do
         call endwin
         say "Error creating file list window"
@@ -168,7 +178,7 @@ setup_screen: procedure expose header footer log filelist contents screen date_c
     call draw_filelist
 
     /* Create a contents window - right remaining columns */
-    contents = newwin(rows - 7, cols - 36, 1, 36)
+    contents = newwin(rows - log_lines - 2, cols - 36, 1, 36)
     if contents = 0 then do
         call endwin
         say "Error creating contents window"
@@ -176,7 +186,7 @@ setup_screen: procedure expose header footer log filelist contents screen date_c
     end
     call wbkgd contents, "COLOR_PAIR(2)"
     content_width = cols - 36 - 7
-    content_length = rows - 7
+    content_length = rows - log_lines - 2
     call draw_filecontents
 
     return

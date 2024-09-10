@@ -1,6 +1,12 @@
 // rxcurses - CREXX Wrapper for the ncurses library
 
-#include <ncurses.h>
+#ifdef PDCURSES
+// Undefine PDC_DLL_BUILD so that the PDCurses headers use static linking
+#undef PDC_DLL_BUILD
+#include <curses.h>
+#else
+#include <ncursesw/ncurses.h>
+#endif
 #include "crexxpa.h"    // crexx/pa - Plugin Architecture header file
 #include <ctype.h>
 #include <stdlib.h>
@@ -242,8 +248,8 @@ static int getch_utf8(WINDOW* window, char* buffer) {
             strcpy(buffer, "[RESIZE]"); return 1;
         default:
             if (ch > 0xFF) {
-                // Handle unknown special keys
-                strcpy(buffer, "[SPECIAL]");
+                // Handle unknown special keys - print code in hex
+                sprintf(buffer, "[SPECIAL-%X]", ch);
                 return 1;
             } else {
                 // Handle UTF-8 or ASCII characters
@@ -283,10 +289,10 @@ static int getch_utf8(WINDOW* window, char* buffer) {
  *
  * On error, the function returns -1.
  */
-static int get_attributes(char* attribute_list)
+static chtype get_attributes(char* attribute_list)
 {
-    int attributes = 0;
-    int colour_pair = 0;
+    chtype attributes = 0;
+    chtype colour_pair = 0;
     char* p;
     char* q;
     char* end;
@@ -623,7 +629,7 @@ PROCEDURE(rx_attron)
     if( NUM_ARGS != 1) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected attributes")
 
     // Get the attributes
-    int attributes = get_attributes(GETSTRING(ARG(0)));
+    chtype attributes = get_attributes(GETSTRING(ARG(0)));
     if (attributes == -1) {
         RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "invalid attributes")
     }
@@ -648,7 +654,7 @@ PROCEDURE(rx_attroff)
     if( NUM_ARGS != 1) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected attributes")
 
     // Get the attributes
-    int attributes = get_attributes(GETSTRING(ARG(0)));
+    chtype attributes = get_attributes(GETSTRING(ARG(0)));
     if (attributes == -1) {
         RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "invalid attributes")
     }
@@ -673,7 +679,7 @@ PROCEDURE(rx_bkgd)
     if( NUM_ARGS != 1) RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "expected attributes")
 
     // Get the attributes
-    int attributes = get_attributes(GETSTRING(ARG(0)));
+    chtype attributes = get_attributes(GETSTRING(ARG(0)));
     if (attributes == -1) {
         RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "invalid attributes")
     }
@@ -1454,7 +1460,8 @@ PROCEDURE(rx_setlocale)
 /**
  * @brief Initialises color functionality
  *
- * This function is a wrapper for curses `start_color()`.
+ * This function is a wrapper for curses `start_color()` followed by
+ * use_default_colors() to allow the use of the terminal's default colors.
  *
  * @signal INVALID_ARGUMENTS if the number of arguments is incorrect.
  * @signal FAILURE if an error occurs during the execution of `start_color()`.
@@ -1466,6 +1473,9 @@ PROCEDURE(rx_start_color)
 
     // Call start_color() and check for errors
     if( start_color() != OK) RETURNSIGNAL(SIGNAL_FAILURE, "ncurses start_color() failure")
+
+    // Call use_default_color() and check for errors
+    if( use_default_colors() != OK) RETURNSIGNAL(SIGNAL_FAILURE, "ncurses use_default_colors() failure")
 }
 
 /**
@@ -1565,7 +1575,7 @@ PROCEDURE(rx_wattron)
     }
 
     // Get the attributes
-    int attributes = get_attributes(GETSTRING(ARG(1)));
+    chtype attributes = get_attributes(GETSTRING(ARG(1)));
     if (attributes == -1) {
         RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "invalid attributes")
     }
@@ -1598,7 +1608,7 @@ PROCEDURE(rx_wattroff)
     }
 
     // Get the attributes
-    int attributes = get_attributes(GETSTRING(ARG(1)));
+    chtype attributes = get_attributes(GETSTRING(ARG(1)));
     if (attributes == -1) {
         RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "invalid attributes")
     }
@@ -1631,7 +1641,7 @@ PROCEDURE(rx_wbkgd)
     }
 
     // Get the attributes
-    int attributes = get_attributes(GETSTRING(ARG(1)));
+    chtype attributes = get_attributes(GETSTRING(ARG(1)));
     if (attributes == -1) {
         RETURNSIGNAL(SIGNAL_INVALID_ARGUMENTS, "invalid attributes")
     }
