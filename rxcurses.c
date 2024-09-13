@@ -5,7 +5,7 @@
 #undef PDC_DLL_BUILD
 #include <curses.h>
 #else
-#include <ncursesw/ncurses.h>
+#include <ncurses.h>
 #endif
 #include "crexxpa.h"    // crexx/pa - Plugin Architecture header file
 #include <ctype.h>
